@@ -40,18 +40,46 @@ public:
 		ifstream fin(_storage);
 		assert(fin.good());
 		parse(_format);
-		/* TODO : load in file data */
+		stringstream ss;
+		ss << fin.rdbuf();
+		Marshalled ml;
+		ml.data(ss.str());
+		size_t rows, cols;
+		ml.pull(&rows, &cols);
+
+		Logger::info("file has % cols, header has %",
+			     cols, _header->columns());
+		assert(cols == _header->columns());
+		/* Actually, adding cols will be allowed. For now just assert
+		 * and later do a mechanism to protect against accidents. */
+
+		for (size_t i = 0; i < rows; ++i) {
+			add_row("");
+			assert(get_cell(i, 0)->get().empty());
+			for (size_t j = 0; j < cols; ++j) {
+				ml.pull(get_cell(i, j));
+			}
+			assert(!get_cell(i, 0)->get().empty());
+		}
 
 	}
 
 	virtual void save() {
-		// TODO: save
+		Marshalled ml(_rows.size(), _header->columns());
+		for (size_t i = 0; i < _rows.size(); ++i) {
+			for (size_t j = 0; j < _header->columns(); ++j) {
+				ml.push(*get_cell(i, j));
+			}
+		}
+		ofstream fout(_storage);
+		fout << ml.str();
 	}
 
 /* TODO: mutex,
          rpc stub and service
 	 http monitor
 	 public keys for clients and sig checks incl. parameters and program
+	 list of allowed routines to be run, only do if on list
  */
 
 	virtual void get_work(size_t* row, size_t* col, string* what,
@@ -99,6 +127,16 @@ public:
 			cell->set(result);
 		}
 	}
+
+/*	virtual void iterate(const F_TableCell& cb) {
+		size_t cols = _header->columns();
+		for (size_t row = 0; row < _rows.size(); ++row) {
+			for (size_t col = 0; col < cols; ++col) {
+				cb(get_cell(row, col));
+			}
+		}
+	}
+*/
 
 	virtual void get_raw(vector<vector<string>>* out) const {
 		size_t cols = _header->columns();

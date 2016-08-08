@@ -4,6 +4,7 @@
 #include <string>
 
 #include "ib/logger.h"
+#include "ib/marshalled.h"
 
 using namespace std;
 using namespace ib;
@@ -44,8 +45,16 @@ public:
 		_state = ERROR;
 	}
 
+	virtual void demarshal(Marshalled* m) {
+		m->pull(&_state, &_data);
+	}
+
+	virtual void marshal(Marshalled* m) const {
+		m->push(_state, _data);
+	}
+
 protected:
-	state _state;
+	uint8_t _state;
 	string _data;
 };
 

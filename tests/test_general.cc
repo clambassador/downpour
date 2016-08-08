@@ -74,4 +74,11 @@ int main() {
 	vector<vector<string>> out;
 	table.get_raw(&out);
 	Logger::info("result %", out);
+
+	table.save();
+	WorkTable table_in(format, outfile);
+	table_in.load();
+	out.clear();
+	table_in.get_raw(&out);
+	Logger::info("save/load result %", out);
 }
