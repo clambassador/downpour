@@ -1,18 +1,11 @@
 import os
-print ""
-print ""
-print ""
-print ""
-print ""
-print ""
-print ""
-print ""
-print ""
-print ""
-common = Split("""logger.cc
+for i in range(0, 10):
+    print ""
+common = Split("""../ib/libib.a
 	       """)
 tests = dict()
 tests['test_general.cc'] = 'test_general'
+tests['test_fork.cc'] = 'test_fork'
 
 libs = Split("""
 	     """)

@@ -1,11 +1,13 @@
 #ifndef __DOWNPOUR__WORK_TABLE__H__
 #define __DOWNPOUR__WORK_TABLE__H__
 
+#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "downpour/logger.h"
+#include "ib/logger.h"
+#include "ib/marshalled.h"
 #include "downpour/work_cell.h"
 #include "downpour/work_header.h"
 #include "downpour/work_row.h"
@@ -26,7 +28,7 @@ public:
 		assert(!_format.empty());
 		assert(!_storage.empty());
 
-		assert(!ifsteam(_storage).good());
+		assert(!ifstream(_storage).good());
 
 		parse(_format);
 	}

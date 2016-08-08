@@ -3,7 +3,10 @@
 
 #include <string>
 
+#include "ib/logger.h"
+
 using namespace std;
+using namespace ib;
 
 namespace downpour {
 
