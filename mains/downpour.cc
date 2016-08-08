@@ -1,0 +1,42 @@
+#include "ib/logger.h"
+#include "downpour/work_table.h"
+#include "downpour/worker.h"
+
+#include <csignal>
+#include <string>
+#include <vector>
+#include <unistd.h>
+
+using namespace std;
+using namespace downpour;
+using namespace ib;
+
+unique_ptr<WorkTable> _table;
+
+void sigterm_handler(int s) {
+	_table->save();
+	exit(0);
+}
+
+void sigignore_handler(int s) {}
+
+int main(int argc, char** argv) {
+	if (argc < 3 || argc > 3) {
+		Logger::error("usage: downpour format savefile");
+		exit(1);
+	}
+	string format(argv[1]);
+	string outfile(argv[2]);
+
+        signal(SIGCHLD, sigterm_handler);
+        signal(SIGTERM, sigterm_handler);
+        signal(SIGINT, sigterm_handler);
+        signal(SIGALRM, sigignore_handler);
+
+
+	_table.reset(new WorkTable(format, outfile));
+	_table->load();
+	Worker worker(_table.get());
+
+	worker.work();
+}
