@@ -2,7 +2,9 @@
 #define __DOWNPOUR__WORKER__H__
 
 #include <cstring>
+#include <memory>
 #include <string>
+#include <thread>
 #include <unistd.h>
 
 #include "abstract_work_table.h"
@@ -62,8 +64,14 @@ public:
 		return 0;
 	}
 
+	virtual void spawn() {
+		_thread.reset(new thread(
+			&Worker::work, this));
+	}
+
 protected:
 	AbstractWorkTable* _work_table;
+	unique_ptr<thread> _thread;
 };
 
 }  // namespace downpour

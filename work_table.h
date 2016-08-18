@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ib/logger.h"
+#include "ib/sensible_time.h"
 #include "ib/marshalled.h"
 #include "downpour/abstract_work_table.h"
 #include "downpour/work_cell.h"
@@ -20,7 +21,8 @@ namespace downpour {
 class WorkTable : public AbstractWorkTable {
 public:
 	WorkTable(const string& format, const string& storage)
-		: _storage(storage), _format(format), _work_row(-1) {}
+		: _storage(storage), _format(format), _work_row(-1),
+		_last_save(0) {}
 	virtual ~WorkTable() {
 		save();
 	}
@@ -39,8 +41,12 @@ public:
 		assert(!_storage.empty());
 
 		ifstream fin(_storage);
-		if (!fin.good()) return initialize();
-		assert(fin.good());
+		if (!fin.good()) {
+			Logger::info("No file % to load. Calling init()",
+				     _storage);
+			initialize();
+			return;
+		}
 		parse(_format);
 		stringstream ss;
 		ss << fin.rdbuf();
@@ -73,8 +79,10 @@ public:
 				ml.push(*get_cell(i, j));
 			}
 		}
-		ofstream fout(_storage);
+		ofstream fout(_storage+ ".tmp");
 		fout << ml.str();
+		fout.close();
+		rename((_storage +".tmp").c_str(), _storage.c_str());
 	}
 
 /* TODO: mutex,
@@ -153,6 +161,7 @@ public:
 			assert(cell);
 			cell->set(result);
 		}
+		maybe_save();
 	}
 
 /*	virtual void iterate(const F_TableCell& cb) {
@@ -181,6 +190,13 @@ public:
 	}
 
 protected:
+	virtual void maybe_save() {
+		if (sensible_time::runtime() - _last_save > 10) {
+			save();
+			_last_save = sensible_time::runtime();
+		}
+	}
+
 	virtual WorkCell* get_cell(size_t row, size_t col) const {
 		assert(row < _rows.size());
 		assert(col < _header->columns());
@@ -225,6 +241,7 @@ protected:
 	string _storage;
 	string _format;
 	size_t _work_row;
+	int _last_save;
 };
 
 }
