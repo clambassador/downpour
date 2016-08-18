@@ -20,10 +20,12 @@ public:
 	virtual ~AbstractWorkTable() {}
 
 	virtual void get_work(size_t* row, size_t* col, string* what,
-			      vector<string>* data) = 0;
+			      string* data) = 0;
 	virtual void error(size_t row, size_t col, const string& result) = 0;
-	virtual void done_work(size_t row, size_t col, string result) = 0;
+	virtual void done_work(size_t row, size_t col, const string& result) = 0;
 	virtual void get_raw(vector<vector<string>>* out) const = 0;
+	virtual void save() = 0;
+	virtual void load() = 0;
 };
 
 }

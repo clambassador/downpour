@@ -17,15 +17,32 @@ public:
 	Worker(AbstractWorkTable* work_table) : _work_table(work_table) {}
 
 	virtual void work() {
+		bool filled = false;
 		while (true) {
 			size_t row;
 			size_t col;
 			string what;
-			vector<string> data;
+			string data;
 			_work_table->get_work(&row, &col, &what, &data);
 			if (row == -1) {
-				// TODO: do the create more work
+				string result;
+				Run run(what, data);
+				run();
+				Logger::info("..");
+				stringstream ss;
+				ss << run.read();
+				Logger::info("--%", ss.str());
+				while (ss.good()) {
+					string entry;
+					getline(ss, entry);
+					_work_table->done_work(-1, 0, entry);
+				}
+				if (!filled) {
+					filled = true;
+					continue;
+				}
 				break;
+				// TODO: check if anything was added.
 			}
 
 			string result;
@@ -35,7 +52,7 @@ public:
 	}
 
 	virtual int do_work(size_t row, size_t col, const string& what,
-			    const vector<string>& data, string* result) {
+			    const string& data, string* result) {
 		Logger::info("doing work for % %: %", row, col, what);
 		Run run(what, data);
 		run();

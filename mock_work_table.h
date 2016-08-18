@@ -19,7 +19,7 @@ public:
 	virtual ~MockWorkTable() {}
 
 	virtual void get_work(size_t* row, size_t* col, string* what,
-			      vector<string>* data) {
+			      string* data) {
 		if (_cur == _rows.size()) {
 			*row = -1;
 			*col = -1;
@@ -35,11 +35,13 @@ public:
 	}
 
 	virtual void error(size_t row, size_t col, const string& result) {}
-	virtual void done_work(size_t row, size_t col, string result) {}
+	virtual void done_work(size_t row, size_t col, const string& result) {}
 	virtual void get_raw(vector<vector<string>>* out) const {}
+	virtual void save() {}
+	virtual void load() {}
 
 	virtual void set_mock(size_t row, size_t col, string what,
-                              vector<string> data) {
+                              const string& data) {
 		_rows.push_back(row);
 		_cols.push_back(col);
 		_whats.push_back(what);
@@ -48,7 +50,7 @@ public:
 protected:
 	vector<size_t> _rows, _cols;
 	vector<string> _whats;
-	vector<vector<string>> _datas;
+	vector<string> _datas;
 	size_t _cur;
 };
 

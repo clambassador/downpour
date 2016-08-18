@@ -12,7 +12,7 @@ using namespace ib;
 
 int main() {
 	MockWorkTable table;
-	table.set_mock(0, 0, "/bin/ls -l .", vector<string>());
+	table.set_mock(0, 0, "/bin/ls -l .", "");
 	Worker worker(&table);
 
 	worker.work();

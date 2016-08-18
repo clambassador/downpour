@@ -8,6 +8,7 @@
 
 #include "ib/logger.h"
 #include "ib/marshalled.h"
+#include "downpour/abstract_work_table.h"
 #include "downpour/work_cell.h"
 #include "downpour/work_header.h"
 #include "downpour/work_row.h"
@@ -16,7 +17,7 @@ using namespace std;
 
 namespace downpour {
 
-class WorkTable {
+class WorkTable : public AbstractWorkTable {
 public:
 	WorkTable(const string& format, const string& storage)
 		: _storage(storage), _format(format), _work_row(-1) {}
@@ -38,6 +39,7 @@ public:
 		assert(!_storage.empty());
 
 		ifstream fin(_storage);
+		if (!fin.good()) return initialize();
 		assert(fin.good());
 		parse(_format);
 		stringstream ss;
@@ -83,15 +85,16 @@ public:
  */
 
 	virtual void get_work(size_t* row, size_t* col, string* what,
-			      vector<string>* data) {
+			      string* data) {
 		*col = find_work();
 		if (*col == -1) {
 			*col = 0;
 			*row = -1;
 			vector<size_t> args;
-			_header->get_work(*col, what, &args);
+			int style;
+			_header->get_work(*col, what, &args, &style);
 			assert(!args.size());
-			project(0, data);
+			*data = "";
 			return;
 		}
 		*row = _work_row;
@@ -99,14 +102,36 @@ public:
 		WorkCell* cell = get_cell(*row, *col);
 		assert(!cell->finished());
 		vector<size_t> args;
-		_header->get_work(*col, what, &args);
+		int argstyle;
+		_header->get_work(*col, what, &args, &argstyle);
 		assert(data);
 		assert(!data->size());
+		vector<string> arg_data;
 		for (auto &x : args) {
 			WorkCell* cell_arg = get_cell(*row, x);
 			assert(cell_arg);
 			assert(cell_arg->finished());
-			data->push_back(cell_arg->get());
+			arg_data.push_back(cell_arg->get());
+		}
+		if (argstyle == WorkHeader::RAW) {
+			for (auto &x : arg_data) {
+				*data += x;
+			}
+		}
+		if (argstyle == WorkHeader::NEWLINE) {
+			for (auto &x : arg_data) {
+				*data += x + '\n';
+			}
+		}
+		if (argstyle == WorkHeader::STRING) {
+			Marshalled ml;
+			for (auto &x : arg_data) {
+				ml.push(x);
+			}
+			*data = ml.str();
+		}
+		if (argstyle == WorkHeader::VECTOR) {
+			*data = Marshalled(arg_data).str();
 		}
 	}
 
@@ -117,9 +142,11 @@ public:
 		cell->error(result);
 	}
 
-	virtual void done_work(size_t row, size_t col, string result) {
+	virtual void done_work(size_t row, size_t col, const string& result) {
 		if (col == 0) {
 			assert(row == -1);
+			// TODO: project row and check
+			Logger::info("add %", result);
 			add_row(result);
 		} else {
 			WorkCell* cell = get_cell(row, col);

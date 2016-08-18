@@ -17,13 +17,13 @@ int main() {
 
 	fout << "FILES" << endl;
 	fout << "ls /tmp" << endl;
-	fout << "0" << endl;
+	fout << "" << endl;
 	fout << "SIZES" << endl;
 	fout << "getsize" << endl;
-	fout << "1 0" << endl;
+	fout << "0" << endl;
 	fout << "BLOCKS" << endl;
 	fout << "blocks" << endl;
-	fout << "1 1" << endl;
+	fout << "1" << endl;
 
 	fout.close();
 
@@ -31,16 +31,15 @@ int main() {
 	table.initialize();
 
 	bool fill = false;
+	bool done = false;
 
 	while (true) {
 		size_t row = 0, col = 0;
 		string what;
-		vector<string> data;
+		string data;
 
 		table.get_work(&row, &col, &what, &data);
-
-		Logger::info("got work % % % % %", row, col, what,
-			     data.size(), data.size() ? data[0] : "nargs");
+		Logger::info("got work % % % %", row, col, what, data);
 		if (!fill) {
 			assert(row == -1);
 			assert(col == 0);
@@ -52,13 +51,10 @@ int main() {
 			table.done_work(-1, 0, "wham");
 			table.done_work(-1, 0, "thee");
 		} else if (col == 0) {
-			Logger::info("out out data %", data);
-			assert(data.size() >= 5);
-			assert(data[4] == "thee");
-			if (data.size() == 7) {
-				assert(data[6] == "topp");
+			if (done) {
 				break;
 			}
+			done = true;
 			table.done_work(-1, 0, "what");
 			table.done_work(-1, 0, "topp");
 		} else {

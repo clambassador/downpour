@@ -1,4 +1,5 @@
 #include "ib/logger.h"
+#include "downpour/abstract_work_table.h"
 #include "downpour/work_table.h"
 #include "downpour/worker.h"
 
@@ -11,7 +12,7 @@ using namespace std;
 using namespace downpour;
 using namespace ib;
 
-unique_ptr<WorkTable> _table;
+unique_ptr<AbstractWorkTable> _table;
 
 void sigterm_handler(int s) {
 	_table->save();
@@ -32,7 +33,6 @@ int main(int argc, char** argv) {
         signal(SIGTERM, sigterm_handler);
         signal(SIGINT, sigterm_handler);
         signal(SIGALRM, sigignore_handler);
-
 
 	_table.reset(new WorkTable(format, outfile));
 	_table->load();
