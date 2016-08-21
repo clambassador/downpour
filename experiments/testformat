@@ -1,10 +1,10 @@
 WORDS
 /bin/cat input
 
-CONTENTS
+LENGTH
 /usr/bin/wc
 0
 
-TRIM
-/usr/bin/cut -d' ' -f 2-10
+HASH
+/usr/bin/sha1sum
 1

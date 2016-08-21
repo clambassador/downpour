@@ -35,7 +35,9 @@ public:
 	}
 
 	virtual void error(size_t row, size_t col, const string& result) {}
-	virtual void done_work(size_t row, size_t col, const string& result) {}
+	virtual bool done_work(size_t row, size_t col, const string& result) {
+		return true;
+	}
 	virtual void get_raw(vector<vector<string>>* out) const {}
 	virtual void save() {}
 	virtual void load() {}

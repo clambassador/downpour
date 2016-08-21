@@ -15,8 +15,13 @@ using namespace ib;
 unique_ptr<AbstractWorkTable> _table;
 
 void sigterm_handler(int s) {
+	Logger::info("sigterm: %", s);
 	_table->save();
 	exit(0);
+}
+
+void sigchild_handler(int s) {
+	Logger::info("(downpour worker): child exit");
 }
 
 void sigignore_handler(int s) {}
@@ -29,7 +34,7 @@ int main(int argc, char** argv) {
 	string format(argv[1]);
 	string outfile(argv[2]);
 
-        signal(SIGCHLD, sigterm_handler);
+        signal(SIGCHLD, sigchild_handler);
         signal(SIGTERM, sigterm_handler);
         signal(SIGINT, sigterm_handler);
         signal(SIGALRM, sigignore_handler);
@@ -39,4 +44,7 @@ int main(int argc, char** argv) {
 	Worker worker(_table.get());
 
 	worker.work();
+	Logger::info("(downpour) worker finished; normal exit.");
+	_table.reset(nullptr);
+	return 0;
 }

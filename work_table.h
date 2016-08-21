@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "ib/formatting.h"
 #include "ib/logger.h"
 #include "ib/sensible_time.h"
 #include "ib/marshalled.h"
@@ -25,6 +26,8 @@ public:
 		_last_save(0) {}
 	virtual ~WorkTable() {
 		save();
+		trace();
+		output_csv();
 	}
 
 	virtual void initialize() {
@@ -68,11 +71,15 @@ public:
 				ml.pull(get_cell(i, j));
 			}
 			assert(!get_cell(i, 0)->get().empty());
+			_row_names.insert(get_cell(i, 0)->get());
 		}
 
 	}
 
 	virtual void save() {
+		Logger::info("(downpour) saving %x% to %",
+			     _rows.size(), _header->columns(),
+			     _storage);
 		Marshalled ml(_rows.size(), _header->columns());
 		for (size_t i = 0; i < _rows.size(); ++i) {
 			for (size_t j = 0; j < _header->columns(); ++j) {
@@ -83,6 +90,7 @@ public:
 		fout << ml.str();
 		fout.close();
 		rename((_storage +".tmp").c_str(), _storage.c_str());
+		Logger::info("(downpour) saved successfully.");
 	}
 
 /* TODO: mutex,
@@ -150,18 +158,19 @@ public:
 		cell->error(result);
 	}
 
-	virtual void done_work(size_t row, size_t col, const string& result) {
+	virtual bool done_work(size_t row, size_t col, const string& result) {
+		bool retval = true;
 		if (col == 0) {
 			assert(row == -1);
-			// TODO: project row and check
-			Logger::info("add %", result);
-			add_row(result);
+			assert(!result.empty());
+			retval = add_row(result);
 		} else {
 			WorkCell* cell = get_cell(row, col);
 			assert(cell);
 			cell->set(result);
 		}
 		maybe_save();
+		return retval;
 	}
 
 /*	virtual void iterate(const F_TableCell& cb) {
@@ -187,6 +196,59 @@ public:
 				out->back().push_back(cell->get());
 			}
 		}
+	}
+
+	virtual void output_csv() const {
+		string filename = _storage + ".csv";
+		ofstream fout(filename);
+
+		size_t cols = _header->columns();
+		for (size_t row = 0; row < _rows.size(); ++row) {
+			for (size_t col = 0; col < cols; ++col) {
+				WorkCell const * cell = get_cell(row, col);
+				fout << Formatting::csv_escape(cell->get());
+				if (col < cols - 1) fout << ',';
+			}
+			fout << endl;
+		}
+		fout.close();
+	}
+
+	virtual void trace() const {
+		stringstream ss;
+		size_t cols = _header->columns();
+		vector<size_t> widths;
+		widths.resize(cols);
+		for (size_t row = 0; row < _rows.size(); ++row) {
+			for (size_t col = 0; col < cols; ++col) {
+				WorkCell const * cell = get_cell(row, col);
+				if (cell->get().length() > widths[col]) {
+					widths[col] = cell->get().length();
+				}
+				if (row == _rows.size() - 1) {
+					if (col == 0) ss << "        ";
+					string s =
+					    _header->get_column_name(col);
+					s.resize(widths[col], ' ');
+					ss << s << "   ";
+				}
+			}
+		}
+		ss << endl;
+		for (size_t row = 0; row < _rows.size(); ++row) {
+			ss << "[" << row << "] \t";
+			for (size_t col = 0; col < cols; ++col) {
+				WorkCell const * cell = get_cell(row, col);
+				string value = cell->get();
+				for (int i = 0; i < value.length(); ++i) {
+					if (value[i] == '\n') value[i] = ' ';
+				}
+				value.resize(widths[col], ' ');
+				ss << value << "   ";
+			}
+			ss << endl;
+		}
+		Logger::info("(downpour) table data:\n\n%\n\n", ss.str());
 	}
 
 protected:
@@ -218,10 +280,13 @@ protected:
 		return -1;
 	}
 
-	void add_row(const string& entry) {
+	bool add_row(const string& entry) {
+		if (!entry.empty() && _row_names.count(entry)) return false;
 		_rows.push_back(unique_ptr<WorkRow>(nullptr));
 		_rows.back().reset(new WorkRow(_header.get()));
 		_rows.back()->set(0, entry);
+		_row_names.insert(entry);
+		return true;
 	}
 
 	void project(size_t col, vector<string>* result) {
@@ -242,6 +307,7 @@ protected:
 	string _format;
 	size_t _work_row;
 	int _last_save;
+	set<string> _row_names;
 };
 
 }

@@ -100,6 +100,10 @@ exit:
 		return _column_args_style.at(col);
 	}
 
+	virtual string get_column_name(size_t col) const {
+		return _column_names[col];
+	}
+
 protected:
 	vector<string> _column_names;
 	vector<string> _column_programs;

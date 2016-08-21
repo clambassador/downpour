@@ -31,6 +31,11 @@ public:
 		return _data;
 	}
 
+	virtual string get_result() const {
+		if (_state != FINISHED) return "";
+		return _data;
+	}
+
 	virtual void set(const string& value) {
 		if (_state == FINISHED && value != _data) {
 			Logger::error("cell::set already full. % v %",
