@@ -61,7 +61,7 @@ int main() {
 			assert(row != -1);
 			static int j = 0;
 			++j;
-			if (j % 3) table.error(row, col, "bad news");
+			if (j % 3) table.error(row, col, "bad news (but okay)");
 			else table.done_work(row, col, Logger::stringify(
 				"% % % answers", row, col, data[0]));
 		}

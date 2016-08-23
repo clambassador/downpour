@@ -8,6 +8,7 @@
 
 #include "ib/formatting.h"
 #include "ib/logger.h"
+#include "ib/tokenizer.h"
 #include "ib/sensible_time.h"
 #include "ib/marshalled.h"
 #include "downpour/abstract_work_table.h"
@@ -120,6 +121,16 @@ public:
 		vector<size_t> args;
 		int argstyle;
 		_header->get_work(*col, what, &args, &argstyle);
+		stringstream ss;
+		for (int i = 0; i < what->length(); ++i) {
+			if ((*what)[i] == '$') {
+				size_t argcol;
+				Tokenizer::extract("$(%)", what->substr(i), &argcol);
+				Logger::info("nabbed % from %", argcol, *what);
+			}
+		}
+
+
 		assert(data);
 		assert(!data->size());
 		vector<string> arg_data;

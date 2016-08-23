@@ -58,7 +58,7 @@ public:
 					size_t arg;
 					set<size_t> test;
 					ss >> arg;
-					assert(arg <= _column_names.size());
+					assert(arg < _column_names.size());
 					assert(!test.count(arg));
 					test.insert(arg);
 					_column_args.back().push_back(arg);
@@ -70,6 +70,17 @@ public:
 			_column_names.push_back(column_name);
 			_column_programs.push_back(program);
 
+			_column_waitfor = _column_args;
+			set<size_t> cols;
+			for (auto &x : _column_args.back())cols.insert(x);
+			for (int i = 0; i < _column_names.size(); ++i) {
+				if (cols.count(i)) continue;
+				if (program.find(Logger::stringify("$%", i))) {
+					Logger::debug("found % in %", i,
+						      program);
+					cols.insert(i);
+				}
+			}
 		}
 exit:
 		Logger::info("(downpour) Header: %", _column_names);
@@ -96,6 +107,10 @@ exit:
 		*args = _column_args[col];
 	}
 
+	virtual void get_column_waitfor(size_t col, vector<size_t>* waitfor) const {
+		*waitfor = _column_waitfor[col];
+	}
+
 	virtual int get_column_args_style(size_t col) const {
 		return _column_args_style.at(col);
 	}
@@ -108,6 +123,7 @@ protected:
 	vector<string> _column_names;
 	vector<string> _column_programs;
 	vector<vector<size_t>> _column_args;
+	vector<vector<size_t>> _column_waitfor;
 	vector<int> _column_args_style;
 };
 
