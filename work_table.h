@@ -46,7 +46,7 @@ public:
 
 		ifstream fin(_storage);
 		if (!fin.good()) {
-			Logger::info("No file % to load. Calling init()",
+			Logger::info("(downpour) No file % to load. Calling init()",
 				     _storage);
 			initialize();
 			return;
@@ -59,7 +59,7 @@ public:
 		size_t rows, cols;
 		ml.pull(&rows, &cols);
 
-		Logger::info("file has % cols, header has %",
+		Logger::info("(downpour) File has % cols, header has %",
 			     cols, _header->columns());
 		assert(cols == _header->columns());
 		/* Actually, adding cols will be allowed. For now just assert
@@ -78,7 +78,7 @@ public:
 	}
 
 	virtual void save() {
-		Logger::info("(downpour) saving %x% to %",
+		Logger::info("(downpour) Saving %x% to %",
 			     _rows.size(), _header->columns(),
 			     _storage);
 		Marshalled ml(_rows.size(), _header->columns());
@@ -122,14 +122,14 @@ public:
 		int argstyle;
 		_header->get_work(*col, what, &args, &argstyle);
 		stringstream ss;
-		for (int i = 0; i < what->length(); ++i) {
-			if ((*what)[i] == '$') {
-				size_t argcol;
-				Tokenizer::extract("$(%)", what->substr(i), &argcol);
-				Logger::info("nabbed % from %", argcol, *what);
-			}
+		size_t argcol = -1;
+		string pre, post;
+		while (Tokenizer::extract("%$(%)%", *what, &pre, &argcol, &post)) {
+			assert(argcol > 0 && argcol <= _header->columns());
+			ss << pre << get_cell(*row, argcol - 1)->get();
+			*what = post;
 		}
-
+		*what = ss.str();
 
 		assert(data);
 		assert(!data->size());

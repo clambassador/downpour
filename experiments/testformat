@@ -2,8 +2,7 @@ WORDS
 /bin/cat input
 
 LENGTH
-/usr/bin/wc
-0
+/bin/echo $(1) | /usr/bin/wc
 
 HASH
 /usr/bin/sha1sum
