@@ -77,6 +77,10 @@ public:
 
 	}
 
+	virtual string name() const {
+		return _storage;
+	}
+
 	virtual void save() {
 		Logger::info("(downpour) Saving %x% to %",
 			     _rows.size(), _header->columns(),
@@ -129,6 +133,7 @@ public:
 			ss << pre << get_cell(*row, argcol - 1)->get();
 			*what = post;
 		}
+		ss << *what;
 		*what = ss.str();
 
 		assert(data);

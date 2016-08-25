@@ -1,0 +1,6 @@
+FILES
+/bin/ls /tmp
+
+DATA
+/usr/bin/stat /tmp/$(1) >
+

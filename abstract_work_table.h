@@ -25,6 +25,7 @@ public:
 	virtual void get_raw(vector<vector<string>>* out) const = 0;
 	virtual void save() = 0;
 	virtual void load() = 0;
+	virtual string name() const = 0;
 };
 
 }

@@ -42,6 +42,8 @@ public:
 	virtual void save() {}
 	virtual void load() {}
 
+	virtual string name() const { return ""; }
+
 	virtual void set_mock(size_t row, size_t col, string what,
                               const string& data) {
 		_rows.push_back(row);

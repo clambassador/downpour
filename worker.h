@@ -27,7 +27,7 @@ public:
 			_work_table->get_work(&row, &col, &what, &data);
 			if (row == -1) {
 				string result;
-
+				assert(what.length());
 				Run run(what, data);
 				run();
 				stringstream ss;
@@ -58,12 +58,28 @@ public:
 	virtual int do_work(size_t row, size_t col, const string& what,
 			    const string& data, string* result) {
 		Logger::info("(downpour worker) doing work for % %: %", row, col, what);
-		Run run(what, data);
+		bool redirect = false;
+		string cmd;
+		Logger::info("% %", what, what[what.length() - 1]);
+		if (what[what.length() - 1] == '>') {
+			cmd = what.substr(0, what.length() - 1);
+			redirect = true;
+		} else {
+			cmd = what;
+		}
+		Run run(cmd, data);
 		run();
 
 		// TODO: check for errors
-
-		*result = run.read();
+		if (redirect) {
+			string filename = Logger::stringify(
+				"./%__data__%__%",
+				_work_table->name(), row, col);
+			run.redirect(filename);
+			*result = filename;
+		} else {
+			*result = run.read();
+		}
 		return 0;
 	}
 
