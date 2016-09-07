@@ -60,7 +60,6 @@ public:
 		Logger::info("(downpour worker) doing work for % %: %", row, col, what);
 		bool redirect = false;
 		string cmd;
-		Logger::info("% %", what, what[what.length() - 1]);
 		if (what[what.length() - 1] == '>') {
 			cmd = what.substr(0, what.length() - 1);
 			redirect = true;
