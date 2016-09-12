@@ -51,6 +51,7 @@ public:
 		_whats.push_back(what);
 		_datas.push_back(data);
 	}
+
 protected:
 	vector<size_t> _rows, _cols;
 	vector<string> _whats;
