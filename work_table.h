@@ -24,7 +24,7 @@ class WorkTable : public AbstractWorkTable {
 public:
 	WorkTable(const string& format, const string& storage)
 		: _storage(storage), _format(format), _work_row(-1),
-		_last_save(0) {}
+		_last_save(0), _loops(0) {}
 	virtual ~WorkTable() {
 		save();
 		trace();
@@ -129,8 +129,15 @@ public:
 		size_t argcol = -1;
 		string pre, post;
 		while (Tokenizer::extract("%$(%)%", *what, &pre, &argcol, &post)) {
-			assert(argcol > 0 && argcol <= _header->columns());
-			ss << pre << get_cell(*row, argcol - 1)->get();
+			if (argcol == 0) {
+				ss << pre << *row;
+			} else {
+				assert(argcol > 0 && argcol <= _header->columns());
+				if (!get_cell(*row, argcol - 1)->finished()) {
+					return get_work(row, col, what, data);
+				}
+				ss << pre << get_cell(*row, argcol - 1)->get();
+			}
 			*what = post;
 		}
 		ss << *what;
@@ -267,6 +274,10 @@ public:
 		Logger::info("(downpour) table data:\n\n%\n\n", ss.str());
 	}
 
+	virtual bool exhausted() const {
+		return _loops > 4;
+	}
+
 protected:
 	virtual void maybe_save() {
 		if (sensible_time::runtime() - _last_save > 10) {
@@ -283,7 +294,9 @@ protected:
 
 	virtual size_t find_work() {
 		if (!_rows.size()) return -1;
-		if (_work_row == -1) _work_row = 0;
+		if (_work_row == -1) {
+			_work_row = 0;
+		}
 		size_t start_row = _work_row;
 		do {
 			size_t col = _rows[_work_row]->get_work();
@@ -291,6 +304,7 @@ protected:
 			++_work_row;
 			if (_work_row == _rows.size()) {
 				_work_row = 0;
+				_loops++;
 			}
 		} while (start_row != _work_row);
 		return -1;
@@ -324,6 +338,7 @@ protected:
 	size_t _work_row;
 	int _last_save;
 	set<string> _row_names;
+	size_t _loops;
 };
 
 }

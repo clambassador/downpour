@@ -26,6 +26,7 @@ public:
 	virtual void save() = 0;
 	virtual void load() = 0;
 	virtual string name() const = 0;
+	virtual bool exhausted() const = 0;
 };
 
 }

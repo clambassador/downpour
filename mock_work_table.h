@@ -52,6 +52,8 @@ public:
 		_datas.push_back(data);
 	}
 
+	virtual bool exhausted() const { return false; }
+
 protected:
 	vector<size_t> _rows, _cols;
 	vector<string> _whats;

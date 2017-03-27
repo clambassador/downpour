@@ -19,7 +19,7 @@ public:
 	Worker(AbstractWorkTable* work_table) : _work_table(work_table) {}
 
 	virtual void work() {
-		while (true) {
+		while (!_work_table->exhausted()) {
 			size_t row;
 			size_t col;
 			string what;
@@ -69,7 +69,6 @@ public:
 		Run run(cmd, data);
 		run();
 
-		// TODO: check for errors
 		if (redirect) {
 			string filename = Logger::stringify(
 				"./%__data__%__%",
@@ -79,7 +78,7 @@ public:
 		} else {
 			*result = run.read();
 		}
-		return 0;
+		return run.result();
 	}
 
 	virtual void spawn() {
