@@ -72,7 +72,7 @@ public:
 
 			_column_waitfor = _column_args;
 			set<size_t> cols;
-			for (auto &x : _column_args.back())cols.insert(x);
+			for (auto &x : _column_args.back()) cols.insert(x);
 			for (int i = 0; i < _column_names.size(); ++i) {
 				if (cols.count(i)) continue;
 				if (program.find(Logger::stringify("$%", i))) {

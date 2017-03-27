@@ -91,7 +91,7 @@ public:
 				ml.push(*get_cell(i, j));
 			}
 		}
-		ofstream fout(_storage+ ".tmp");
+		ofstream fout(_storage + ".tmp");
 		fout << ml.str();
 		fout.close();
 		rename((_storage +".tmp").c_str(), _storage.c_str());
