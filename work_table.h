@@ -229,7 +229,8 @@ public:
 		for (size_t row = 0; row < _rows.size(); ++row) {
 			for (size_t col = 0; col < cols; ++col) {
 				WorkCell const * cell = get_cell(row, col);
-				fout << Formatting::csv_escape(cell->get());
+				if (cell)
+					fout << Formatting::csv_escape(cell->get());
 				if (col < cols - 1) fout << ',';
 			}
 			fout << endl;
