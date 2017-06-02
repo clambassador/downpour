@@ -31,7 +31,7 @@ public:
 				Run run(what, data);
 				run();
 				stringstream ss;
-				ss << run.read();
+				ss << run.read(30);
 				bool novel = false;
 				while (ss.good()) {
 					string entry;
