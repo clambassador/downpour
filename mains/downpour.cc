@@ -20,9 +20,9 @@ void sigterm_handler(int s) {
 	exit(0);
 }
 
-void sigchild_handler(int s) {
-	Logger::info("(downpour worker): child exit");
-}
+//void sigchild_handler(int s) {
+//	Logger::info("(downpour worker): child exit");
+//}
 
 void sigignore_handler(int s) {}
 
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 	string format(argv[1]);
 	string outfile(argv[2]);
 
-        signal(SIGCHLD, sigchild_handler);
+//        signal(SIGCHLD, sigchild_handler);
         signal(SIGTERM, sigterm_handler);
         signal(SIGINT, sigterm_handler);
         signal(SIGALRM, sigignore_handler);
