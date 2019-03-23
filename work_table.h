@@ -190,11 +190,11 @@ public:
 		if (col == 0) {
 			assert(row == -1);
 			assert(!result.empty());
-			retval = add_row(result);
+			retval = add_row(Tokenizer::trim(result));
 		} else {
 			WorkCell* cell = get_cell(row, col);
 			assert(cell);
-			cell->set(result);
+			cell->set(Tokenizer::trim(result));
 		}
 		maybe_save();
 		return retval;
