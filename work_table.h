@@ -132,15 +132,11 @@ public:
 			if (argcol == 0) {
 				ss << pre << *row;
 			} else {
-				if (argcol == 0) {
-					ss << pre << row;
-				} else {
-					assert(argcol > 0 && argcol <= _header->columns());
-					if (!get_cell(*row, argcol - 1)->finished()) {
-						return get_work(row, col, what, data);
-					}
-					ss << pre << get_cell(*row, argcol - 1)->get();
+				assert(argcol > 0 && argcol <= _header->columns());
+				if (!get_cell(*row, argcol - 1)->finished()) {
+					return get_work(row, col, what, data);
 				}
+				ss << pre << get_cell(*row, argcol - 1)->get();
 			}
 			*what = post;
 		}
