@@ -19,6 +19,8 @@ public:
 		}
 	}
 
+	virtual ~WorkRow() {}
+
 	string get(size_t col) const {
 		assert(col < _cells.size());
 		return _cells[col]->get();

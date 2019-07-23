@@ -21,6 +21,8 @@ public:
 
 	WorkHeader() {}
 
+	virtual ~WorkHeader() {}
+
 	virtual void init(const string& filename) {
 		ifstream fin(filename);
 		assert(fin.good());

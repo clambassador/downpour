@@ -23,6 +23,8 @@ public:
 		_state = EMPTY;
 	}
 
+	virtual ~WorkCell() {}
+
 	virtual bool finished() const {
 		return _state == FINISHED;
 	}
