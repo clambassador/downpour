@@ -6,7 +6,10 @@
 #include <string>
 #include <vector>
 
+#include "ib/tokenizer.h"
+
 using namespace std;
+using namespace ib;
 
 namespace downpour {
 
@@ -23,7 +26,7 @@ public:
 
 	virtual ~WorkHeader() {}
 
-	virtual void init(const string& filename) {
+	virtual void init(const string& filename, const vector<string>& params) {
 		ifstream fin(filename);
 		assert(fin.good());
 
@@ -34,6 +37,11 @@ public:
 				if (!fin.good()) goto exit;
 			}
 			getline(fin, program);
+			for (size_t i = 0; i < params.size(); ++i) {
+				string pre = "%" + Logger::stringify("%", i + 1);
+				program = Tokenizer::replace(program, pre,
+							     params[i]);
+			}
 			getline(fin, args);
 			assert(program.size());
 			_column_args.push_back(vector<size_t>());
@@ -77,9 +85,8 @@ public:
 			for (auto &x : _column_args.back())cols.insert(x);
 			for (int i = 0; i < _column_names.size(); ++i) {
 				if (cols.count(i)) continue;
-				if (program.find(Logger::stringify("$%", i))) {
-					Logger::debug("found % in %", i,
-						      program);
+				if (program.find(Logger::stringify("$%", i)) != string::npos ||
+				    program.find(Logger::stringify("$(%)", i)) != string::npos) {
 					cols.insert(i);
 				}
 			}

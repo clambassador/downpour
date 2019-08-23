@@ -23,8 +23,11 @@ namespace downpour {
 class WorkTable : public AbstractWorkTable {
 public:
 	WorkTable(const string& format, const string& storage)
+		: WorkTable(format, storage, vector<string>()) {}
+	WorkTable(const string& format, const string& storage, const
+		  vector<string>& params)
 		: _storage(storage), _format(format), _work_row(-1),
-		_last_save(0), _loops(0) {}
+		_last_save(0), _loops(0), _params(params) {}
 	virtual ~WorkTable() {
 		save();
 		trace();
@@ -328,7 +331,7 @@ protected:
 
 	void parse(const string& format) {
 		_header.reset(new WorkHeader());
-		_header->init(format);
+		_header->init(format, _params);
 	}
 
 	unique_ptr<WorkHeader> _header;
@@ -340,6 +343,7 @@ protected:
 	int _last_save;
 	set<string> _row_names;
 	size_t _loops;
+	vector<string> _params;
 };
 
 }
