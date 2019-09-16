@@ -24,10 +24,13 @@ class WorkTable : public AbstractWorkTable {
 public:
 	WorkTable(const string& format, const string& storage)
 		: WorkTable(format, storage, vector<string>()) {}
-	WorkTable(const string& format, const string& storage, const
-		  vector<string>& params)
+	WorkTable(const string& format,
+		  const string& storage,
+		  const vector<string>& params)
 		: _storage(storage), _format(format), _work_row(-1),
-		_last_save(0), _loops(0), _params(params) {}
+		_last_save(0), _loops(0), _params(params),
+		_mutex(new mutex()) {}
+
 	virtual ~WorkTable() {
 		save();
 		trace();
@@ -35,6 +38,11 @@ public:
 	}
 
 	virtual void initialize() {
+		unique_lock<mutex> lock(*_mutex.get());
+		initialize_impl();
+	}
+
+	virtual void initialize_impl() {
 		assert(!_format.empty());
 		assert(!_storage.empty());
 
@@ -44,6 +52,7 @@ public:
 	}
 
 	virtual void load() {
+		unique_lock<mutex> lock(*_mutex.get());
 		assert(!_format.empty());
 		assert(!_storage.empty());
 
@@ -51,7 +60,7 @@ public:
 		if (!fin.good()) {
 			Logger::info("(downpour) No file % to load. Calling init()",
 				     _storage);
-			initialize();
+			initialize_impl();
 			return;
 		}
 		parse(_format);
@@ -85,6 +94,10 @@ public:
 	}
 
 	virtual void save() {
+		unique_lock<mutex> lock(*_mutex.get());
+		save_impl();
+	}
+	virtual void save_impl() {
 		Logger::info("(downpour) Saving %x% to %",
 			     _rows.size(), _header->columns(),
 			     _storage);
@@ -101,7 +114,7 @@ public:
 		Logger::info("(downpour) saved successfully.");
 	}
 
-/* TODO: mutex,
+/* TODO:
          rpc stub and service
 	 http monitor
 	 public keys for clients and sig checks incl. parameters and program
@@ -109,6 +122,12 @@ public:
  */
 
 	virtual void get_work(size_t* row, size_t* col, string* what,
+			      string* data) {
+		unique_lock<mutex> lock(*_mutex.get());
+		return get_work_impl(row, col, what, data);
+	}
+
+	virtual void get_work_impl(size_t* row, size_t* col, string* what,
 			      string* data) {
 		*col = find_work();
 		if (*col == -1) {
@@ -137,7 +156,7 @@ public:
 			} else {
 				assert(argcol > 0 && argcol <= _header->columns());
 				if (!get_cell(*row, argcol - 1)->finished()) {
-					return get_work(row, col, what, data);
+					return get_work_impl(row, col, what, data);
 				}
 				ss << pre << get_cell(*row, argcol - 1)->get();
 			}
@@ -178,6 +197,7 @@ public:
 	}
 
 	virtual void error(size_t row, size_t col, const string& result) {
+		unique_lock<mutex> lock(*_mutex.get());
 		assert(col > 0);
 		WorkCell* cell = get_cell(row, col);
 		assert(cell);
@@ -185,6 +205,7 @@ public:
 	}
 
 	virtual bool done_work(size_t row, size_t col, const string& result) {
+		unique_lock<mutex> lock(*_mutex.get());
 		bool retval = true;
 		if (col == 0) {
 			assert(row == -1);
@@ -285,7 +306,7 @@ public:
 protected:
 	virtual void maybe_save() {
 		if (sensible_time::runtime() - _last_save > 10) {
-			save();
+			save_impl();
 			_last_save = sensible_time::runtime();
 		}
 	}
@@ -344,6 +365,8 @@ protected:
 	set<string> _row_names;
 	size_t _loops;
 	vector<string> _params;
+
+	unique_ptr<mutex> _mutex;
 };
 
 }
