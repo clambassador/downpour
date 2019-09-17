@@ -13,7 +13,7 @@ using namespace ib;
 int main() {
 	MockWorkTable table;
 	table.set_mock(0, 0, "/bin/ls -l .", "");
-	Worker worker(&table);
+	Worker worker(&table, "test", 1);
 
 	worker.work();
 }

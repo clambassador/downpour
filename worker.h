@@ -9,6 +9,7 @@
 
 #include "abstract_work_table.h"
 #include "ib/run.h"
+#include "ib/tokenizer.h"
 
 using namespace std;
 
@@ -16,16 +17,29 @@ namespace downpour {
 
 class Worker {
 public:
-	Worker(AbstractWorkTable* work_table) : _work_table(work_table) {}
+	Worker(AbstractWorkTable* work_table, const string& name, size_t number)
+	    : _work_table(work_table), _name(name), _number(number) {}
+	virtual ~Worker() {}
 
 	virtual void work() {
+		unique_lock<mutex> ul(_mutex);
+
 		while (!_work_table->exhausted()) {
 			size_t row;
 			size_t col;
 			string what;
 			string data;
-			_work_table->get_work(&row, &col, &what, &data);
+			_work_table->get_work(_name, _number, &row, &col, &what, &data);
+			what = Tokenizer::replace(what, "$NAME", _name);
+			what = Tokenizer::replace(what, "$NUMBER",
+						  Logger::stringify(_number));
+			Logger::info("me % row % col % what % data %", _name,
+				     (int64_t) row, col,what, data);
 			if (row == -1) {
+				if (col == -1) {
+					sleep(1);
+					continue;
+				}
 				string result;
 				assert(what.length());
 				Run run(what, data);
@@ -41,7 +55,7 @@ public:
 				}
 				Logger::info("(downpour worker) added % work",
 					     novel ? "novel" : "no novel");
-				if (!novel) break;
+//				if (!novel) ;
 			} else {
 				string result;
 				int error = do_work(row, col, what, data, &result);
@@ -81,14 +95,21 @@ public:
 		return run.result();
 	}
 
-	virtual void spawn() {
+	virtual void start() {
 		_thread.reset(new thread(
 			&Worker::work, this));
 	}
 
+	virtual void join() {
+		_thread->join();
+	}
+
 protected:
 	AbstractWorkTable* _work_table;
+	string _name;
+	size_t _number;
 	unique_ptr<thread> _thread;
+	mutex _mutex;
 };
 
 }  // namespace downpour

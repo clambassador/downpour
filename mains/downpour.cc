@@ -25,14 +25,20 @@ void sigignore_handler(int s) {}
 
 int main(int argc, char** argv) {
 	if (argc < 3) {
-		Logger::error("usage: downpour format savefile args");
+		Logger::error("usage: downpour format savefile num_workers workernames args");
 		exit(1);
 	}
 	string format(argv[1]);
 	string outfile(argv[2]);
 	if (Fileutil::is_newer(format, outfile)) unlink(outfile.c_str());
+
+	size_t num_workers = atoi(argv[3]);
+	assert(num_workers);
+	assert(argc >= 3 + num_workers);
+
+	Logger::info("(downpour) using % workers", num_workers);
 	vector<string> params;
-	for (size_t i = 3; i < argc; ++i) {
+	for (size_t i = 4 + num_workers; i < argc; ++i) {
 		params.push_back(argv[i]);
 	}
 
@@ -42,9 +48,17 @@ int main(int argc, char** argv) {
 
 	_table.reset(new WorkTable(format, outfile, params));
 	_table->load();
-	Worker worker(_table.get());
+	vector<unique_ptr<Worker>> workers;
+	for (size_t i = 0; i < num_workers; ++i) {
+		workers.push_back(nullptr);
+		workers.back().reset(new Worker(_table.get(), argv[4 + i], i + 1));
+		workers.back()->start();
+	}
 
-	worker.work();
+	for (auto& x : workers) {
+		x->join();
+	}
+
 	Logger::info("(downpour) worker finished; normal exit.");
 	_table.reset(nullptr);
 	return 0;
