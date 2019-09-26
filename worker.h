@@ -71,7 +71,6 @@ public:
 
 	virtual int do_work(size_t row, size_t col, const string& what,
 			    const string& data, string* result) {
-		Logger::info("(downpour worker) doing work for % %: %", row, col, what);
 		bool redirect = false;
 		string cmd;
 		if (what[what.length() - 1] == '>') {
@@ -80,6 +79,7 @@ public:
 		} else {
 			cmd = what;
 		}
+		Logger::info("(downpour worker) doing work for % %: %", row, col, what);
 		Run run(cmd, data);
 		run();
 
