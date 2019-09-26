@@ -23,14 +23,25 @@ namespace downpour {
 class WorkTable : public AbstractWorkTable {
 public:
 	WorkTable(const string& format, const string& storage)
+		: WorkTable(format, storage, vector<string>()) {}
+	WorkTable(const string& format,
+		  const string& storage,
+		  const vector<string>& params)
 		: _storage(storage), _format(format), _work_row(-1),
-		_last_save(0), _loops(0) {}
+		_last_save(0), _loops(0), _params(params),
+		_mutex(new mutex()), _built(false), _num_workers(1) {}
+
 	virtual ~WorkTable() {
 		save();
 		output_csv();
 	}
 
 	virtual void initialize() {
+		unique_lock<mutex> lock(*_mutex.get());
+		initialize_impl();
+	}
+
+	virtual void initialize_impl() {
 		assert(!_format.empty());
 		assert(!_storage.empty());
 
@@ -40,6 +51,7 @@ public:
 	}
 
 	virtual void load() {
+		unique_lock<mutex> lock(*_mutex.get());
 		assert(!_format.empty());
 		assert(!_storage.empty());
 
@@ -47,7 +59,7 @@ public:
 		if (!fin.good()) {
 			Logger::info("(downpour) No file % to load. Calling init()",
 				     _storage);
-			initialize();
+			initialize_impl();
 			return;
 		}
 		parse(_format);
@@ -81,6 +93,10 @@ public:
 	}
 
 	virtual void save() {
+		unique_lock<mutex> lock(*_mutex.get());
+		save_impl();
+	}
+	virtual void save_impl() {
 		Logger::info("(downpour) Saving %x% to %",
 			     _rows.size(), _header->columns(),
 			     _storage);
@@ -97,17 +113,33 @@ public:
 		Logger::info("(downpour) saved successfully.");
 	}
 
-/* TODO: mutex,
+/* TODO:
          rpc stub and service
 	 http monitor
 	 public keys for clients and sig checks incl. parameters and program
 	 list of allowed routines to be run, only do if on list
  */
 
-	virtual void get_work(size_t* row, size_t* col, string* what,
+	virtual void get_work(const string& name, size_t number,
+			      size_t* row, size_t* col, string* what,
 			      string* data) {
+		unique_lock<mutex> lock(*_mutex.get());
+		if (_num_workers < number) _num_workers = number;
+		return get_work_impl(row, col, what, data);
+	}
+
+	virtual void get_work_impl(size_t* row, size_t* col, string* what,
+			      string* data) {
+		*row = -1;
 		*col = find_work();
 		if (*col == -1) {
+			if (leased(-1, 0) || _built) {
+				*what = "";
+				*data = "";
+				return;
+			}
+			_built = true;
+			lease(-1, 0);
 			*col = 0;
 			*row = -1;
 			vector<size_t> args;
@@ -133,7 +165,8 @@ public:
 			} else {
 				assert(argcol > 0 && argcol <= _header->columns());
 				if (!get_cell(*row, argcol - 1)->finished()) {
-					return get_work(row, col, what, data);
+					release(*row, *col);
+					return get_work_impl(row, col, what, data);
 				}
 				ss << pre << get_cell(*row, argcol - 1)->get();
 			}
@@ -174,13 +207,16 @@ public:
 	}
 
 	virtual void error(size_t row, size_t col, const string& result) {
+		unique_lock<mutex> lock(*_mutex.get());
 		assert(col > 0);
 		WorkCell* cell = get_cell(row, col);
 		assert(cell);
 		cell->error(result);
+		release(row, col);
 	}
 
 	virtual bool done_work(size_t row, size_t col, const string& result) {
+		unique_lock<mutex> lock(*_mutex.get());
 		bool retval = true;
 		if (col == 0) {
 			assert(row == -1);
@@ -192,6 +228,7 @@ public:
 			cell->set(Tokenizer::trim(result));
 		}
 		maybe_save();
+		release(row, col);
 		return retval;
 	}
 
@@ -275,13 +312,27 @@ public:
 	}
 
 	virtual bool exhausted() const {
-		return _loops > 4;
+		return _loops > _num_workers * 3;
 	}
 
 protected:
+	virtual bool leased(size_t row, size_t col) {
+		return _leased[row][col];
+	}
+
+	virtual void lease(size_t row, size_t col) {
+		assert(!leased(row, col));
+		_leased[row][col] = true;
+	}
+
+	virtual void release(size_t row, size_t col) {
+		if (row != -1) assert(leased(row, col));
+		_leased[row][col] = false;
+	}
+
 	virtual void maybe_save() {
 		if (sensible_time::runtime() - _last_save > 10) {
-			save();
+			save_impl();
 			_last_save = sensible_time::runtime();
 		}
 	}
@@ -299,8 +350,14 @@ protected:
 		}
 		size_t start_row = _work_row;
 		do {
+
 			size_t col = _rows[_work_row]->get_work();
-			if (col != -1) return col;
+			if (col != -1) {
+				if (!leased(_work_row, col)) {
+					lease(_work_row, col);
+					return col;
+				}
+			}
 			++_work_row;
 			if (_work_row == _rows.size()) {
 				_work_row = 0;
@@ -327,7 +384,7 @@ protected:
 
 	void parse(const string& format) {
 		_header.reset(new WorkHeader());
-		_header->init(format);
+		_header->init(format, _params);
 	}
 
 	unique_ptr<WorkHeader> _header;
@@ -339,6 +396,11 @@ protected:
 	int _last_save;
 	set<string> _row_names;
 	size_t _loops;
+	vector<string> _params;
+	unique_ptr<mutex> _mutex;
+	bool _built;
+	map<size_t, map<size_t, bool>> _leased;
+	size_t _num_workers;
 };
 
 }

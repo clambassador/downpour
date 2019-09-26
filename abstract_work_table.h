@@ -18,7 +18,8 @@ namespace downpour {
 class AbstractWorkTable {
 public:
 	virtual ~AbstractWorkTable() {}
-	virtual void get_work(size_t* row, size_t* col, string* what,
+	virtual void get_work(const string& name, size_t number,
+			      size_t* row, size_t* col, string* what,
 			      string* data) = 0;
 	virtual void error(size_t row, size_t col, const string& result) = 0;
 	virtual bool done_work(size_t row, size_t col, const string& result) = 0;

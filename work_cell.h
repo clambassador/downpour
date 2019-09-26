@@ -21,12 +21,13 @@ public:
 
 	WorkCell() {
 		_state = EMPTY;
+		_tries = 0;
 	}
 
 	virtual ~WorkCell() {}
 
 	virtual bool finished() const {
-		return _state == FINISHED;
+		return _state == FINISHED || _tries > 3;
 	}
 
 	virtual string get() const {
@@ -50,6 +51,7 @@ public:
 	virtual void error(const string& error) {
 		_data = error;
 		_state = ERROR;
+		++_tries;
 	}
 
 	virtual void demarshal(Marshalled* m) {
@@ -63,6 +65,7 @@ public:
 protected:
 	uint8_t _state;
 	string _data;
+	size_t _tries;
 };
 
 }

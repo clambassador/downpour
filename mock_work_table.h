@@ -18,7 +18,9 @@ public:
 	MockWorkTable() : _cur(0) {}
 	virtual ~MockWorkTable() {}
 
-	virtual void get_work(size_t* row, size_t* col, string* what,
+	virtual void get_work(const string& name,
+			      size_t number,
+			      size_t* row, size_t* col, string* what,
 			      string* data) {
 		if (_cur == _rows.size()) {
 			*row = -1;

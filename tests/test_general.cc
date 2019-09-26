@@ -38,7 +38,7 @@ int main() {
 		string what;
 		string data;
 
-		table.get_work(&row, &col, &what, &data);
+		table.get_work("", 1, &row, &col, &what, &data);
 		Logger::info("got work % % % %", row, col, what, data);
 		if (!fill) {
 			assert(row == -1);
