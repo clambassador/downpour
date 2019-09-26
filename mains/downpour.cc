@@ -16,7 +16,7 @@ unique_ptr<AbstractWorkTable> _table;
 
 void sigterm_handler(int s) {
 	Logger::info("sigterm: %", s);
-	_table->save();
+	_table.reset(nullptr);
 	exit(0);
 }
 

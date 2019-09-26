@@ -27,7 +27,6 @@ public:
 		_last_save(0), _loops(0) {}
 	virtual ~WorkTable() {
 		save();
-		trace();
 		output_csv();
 	}
 
