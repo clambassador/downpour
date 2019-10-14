@@ -5,5 +5,7 @@ LENGTH
 /bin/echo $(1) | /usr/bin/wc
 
 HASH
-/usr/bin/sha1sum
-1
+echo $(1) | /usr/bin/sha1sum
+
+ME
+echo $NAME
